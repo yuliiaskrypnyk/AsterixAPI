@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -23,8 +24,27 @@ public class AsterixController {
     }
 
     @GetMapping("/characters")
-    public List<CharacterRecord> getCharacters() {
-        return repository.findAll();
+    public List<CharacterRecord> getCharacters(@RequestParam(required = false) String name,
+                                               @RequestParam(required = false) Integer age,
+                                               @RequestParam(required = false) String profession) {
+
+        if (name != null && age != null && profession != null) {
+            return repository.findByNameContainingAndAgeAndProfession(name, age, profession);
+        } else if (name != null && age != null) {
+            return repository.findByNameContainingAndAge(name, age);
+        } else if (name != null && profession != null) {
+            return repository.findByNameContainingAndProfession(name, profession);
+        } else if (age != null && profession != null) {
+            return repository.findByAgeAndProfession(age, profession);
+        } else if (name != null) {
+            return repository.findByNameContaining(name);
+        } else if (age != null) {
+            return repository.findByAge(age);
+        } else if (profession != null) {
+            return repository.findByProfessionContaining(profession);
+        } else {
+            return repository.findAll();
+        }
     }
 
     @PostMapping("/characters")
