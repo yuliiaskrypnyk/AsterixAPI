@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/asterix")
@@ -21,6 +22,19 @@ public class AsterixController {
 
     public AsterixController(CharacterRepository repository) {
         this.repository = repository;
+    }
+
+    @GetMapping("/characters/{id}")
+    public CharacterRecord getCharacterById(@PathVariable String id) {
+        Optional<CharacterRecord> character = repository.findById(id);
+        if (character.isPresent()) {
+            return character.get();
+        } else {
+            throw new CharacterNotFoundException(id);
+        }
+        //return character.orElseThrow(() -> new CharacterNotFoundException(id));
+/*        return repository.findById(id)
+                .orElseThrow(() -> new CharacterNotFoundException(id));*/
     }
 
     @GetMapping("/characters")
@@ -54,6 +68,19 @@ public class AsterixController {
 
     @PutMapping("/characters/{id}")
     public ResponseEntity<String> updateCharacter(@PathVariable String id, @RequestBody CharacterRecord updatedCharacter) {
+/*        CharacterRecord existingCharacter = repository.findById(id)
+                .orElseThrow(() -> new CharacterNotFoundException(id));
+
+        CharacterRecord updated = new CharacterRecord(
+                existingCharacter.id(),
+                (updatedCharacter.name() != null && !updatedCharacter.name().isBlank()) ? updatedCharacter.name() : existingCharacter.name(),
+                (updatedCharacter.age() > 0) ? updatedCharacter.age() : existingCharacter.age(),
+                (updatedCharacter.profession() != null && !updatedCharacter.profession().isBlank()) ? updatedCharacter.profession() : existingCharacter.profession()
+        );
+
+        repository.save(updated);
+        return ResponseEntity.ok("Character updated successfully:\n" + updated);*/
+
         return repository.findById(id)
                 .map(existingCharacter -> {
                     CharacterRecord updated = new CharacterRecord(
@@ -71,5 +98,39 @@ public class AsterixController {
     @DeleteMapping("/characters/{id}")
     public void deleteCharacter(@PathVariable String id) {
         repository.deleteById(id);
+    }
+
+/*    @GetMapping("/characters/average-age")
+    public double getAverageAgeByProfession(@RequestParam String profession) {
+        return repository.findAverageAgeByProfession(profession);
+    }*/
+
+/*    @GetMapping("/characters/average-age")
+    public double getAverageAgeByProfession(@RequestParam String profession) {
+        List<CharacterRecord> characters = repository.findByProfession(profession);
+
+        if (characters.isEmpty()) {
+            return 0;
+        }
+
+        double totalAge = characters.stream()
+                .mapToInt(CharacterRecord::age)
+                .sum();
+
+        return totalAge / characters.size();
+    }*/
+
+    @GetMapping("/characters/average-age")
+    public double getAverageAgeByProfession(@RequestParam String profession) {
+        List<CharacterRecord> characters = repository.findByProfession(profession);
+
+        if (characters.isEmpty()) {
+            return 0; // Можно выбросить исключение, если это не ожидаемо
+        }
+
+        return characters.stream()
+                .mapToInt(CharacterRecord::age)
+                .average()
+                .orElse(0);
     }
 }
